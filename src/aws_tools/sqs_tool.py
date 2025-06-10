@@ -1,6 +1,8 @@
 import os
 import boto3
 
+from src.schemas import SQSMessage
+
 
 class SQSManager:
     """
@@ -13,7 +15,7 @@ class SQSManager:
         self.queue_url = [url for url in self.sqs.list_queues()['QueueUrls'] if queue_name in url][0]
         self.receipt_handles = []
 
-    def get_sqs_messages(self, max_number: int = 10) -> dict:
+    def get_sqs_messages(self, max_number: int = 10) -> dict[str, SQSMessage]:
         """
         Get SQS messages from queue
 
@@ -47,13 +49,20 @@ class SQSManager:
                     'timestamp': int(message['Attributes']['SentTimestamp']),
                     'receipt_handle': message['ReceiptHandle']}
             if message['MessageId'] not in messages_dict.keys():
-                messages_dict[message_id] = data
+                messages_dict[message_id] = SQSMessage(**data)
             # delete
             elif messages_dict[message_id]['timestamp'] < data['timestamp']:
                 messages_dict[message_id] = data
         return messages_dict
 
-    def delete_sqs_messages(self, messages_dict: dict):
+    def send_sqs_messages(self, messages):
+        for message in messages:
+            self.sqs.send_message(
+                QueueUrl=self.queue_url,
+                MessageBody=message
+            )
+
+    def delete_sqs_messages(self, messages_dict: dict[str, SQSMessage]):
         """
         Delete SQS messages pulled so far from queue
 
@@ -64,5 +73,5 @@ class SQSManager:
         for receipt_handle in messages_dict.values():
             self.sqs.delete_message(
                 QueueUrl=self.queue_url,
-                ReceiptHandle=receipt_handle['receipt_handle']
+                ReceiptHandle=receipt_handle.receipt_handle
             )
