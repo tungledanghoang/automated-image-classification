@@ -5,6 +5,8 @@ from torchvision.models import resnet18, resnet34, resnet50, ResNet18_Weights, R
 from torchvision.io import decode_image
 from torch import Tensor, nn, topk, stack, unbind
 
+from src.logging import logger
+
 
 class ImageClassifierModel:
     """

@@ -7,31 +7,33 @@ class S3Manager:
     """
     Simple class providing methods for getting files from S3 and clearing files from local storage
     """
+
     def __init__(self, bucket_name: str):
         self.s3 = boto3.client('s3', aws_access_key_id=os.environ['AWS_ACCESS_ID'],
-                                aws_secret_access_key=os.environ['AWS_ACCESS_KEY'],
-                                region_name=os.environ['AWS_REGION'])
+                               aws_secret_access_key=os.environ['AWS_ACCESS_KEY'],
+                               region_name=os.environ['AWS_REGION'])
+        response = [bucket['Name'] for bucket in self.s3.list_buckets()['Buckets']]
+        if bucket_name not in response:
+            raise ValueError(f"Bucket {bucket_name} does not exist")
         self.bucket_name = bucket_name
         if not os.path.exists("tmp"):
             os.mkdir("tmp")
 
-    def get_files(self, file_names: List[str]) -> List[str]:
+    def get_file(self, file_name: str) -> str:
         """
         Get files from S3 bucket and save them to a tmp folder
 
         Args:
-            file_names (List of str): list of file names in S3 bucket
+            file_name (str): file name in S3 bucket
 
         Returns:
-            list of paths to saved files
+            Path to saved file
         """
-        file_paths = []
-        for file_name in file_names:
-            self.s3.download_file(self.bucket_name, file_name, f'tmp\\{file_name}')
-            file_paths.append(f'tmp\\{file_name}')
-        return file_paths
+        self.s3.download_file(self.bucket_name, file_name, f'tmp\\{file_name}')
+        return f'tmp\\{file_name}'
 
-    def clear_files(self, file_paths: List[str]):
+    @classmethod
+    def clear_files(cls, file_paths: List[str]):
         """
         Delete files saved from S3 bucket from local storage
 

@@ -1,0 +1,14 @@
+2025-06-10 23:48:45,293 INFO Initialize AWS clients
+2025-06-10 23:48:45,298 INFO Polling SQS queue testing_queue for image processing request
+2025-06-10 23:48:45,299 INFO Got 2 image processing requests
+2025-06-10 23:48:45,299 INFO Retrieving image kitchen.jpg from bucket: testing_bucket
+2025-06-10 23:48:45,309 INFO Retrieving image living_room.jpg from bucket: testing_bucket
+2025-06-10 23:48:45,321 INFO Running model resnet18 to classify 2 images
+2025-06-10 23:48:45,578 INFO Model took 0:00:00.135019 to finish
+2025-06-10 23:48:45,578 INFO Clearing locally saved images
+2025-06-10 23:48:45,579 INFO Done
+2025-06-10 23:48:45,579 INFO Deleting sqs messages
+2025-06-10 23:48:45,580 INFO Done
+2025-06-10 23:48:45,580 INFO Sending result to testing_result_queue SQS Queue
+2025-06-10 23:48:45,580 INFO Result for kitchen.jpg in testing_bucket: sundial
+2025-06-10 23:48:45,580 INFO Result for living_room.jpg in testing_bucket: pole

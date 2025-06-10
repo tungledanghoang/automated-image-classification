@@ -1,1 +1,1 @@
-from .aws_schema import SQSMessage
+from .aws_schema import SQSMessage, SQSSendMessage

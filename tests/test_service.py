@@ -1,7 +1,7 @@
 import os
-import pytest
+import json
 
-from src.service import aws_image_process
+from src.service import aws_image_process, initialize_aws_clients
 from src.aws_tools import SQSManager, S3Manager
 
 
@@ -10,17 +10,21 @@ def test_main_service(moto_aws_mock):
     queue_url = sqs_client.get_queue_url(QueueName=os.environ['SQS_QUEUE_NAME'])['QueueUrl']
     sqs_client.send_message(
         QueueUrl=queue_url,
-        MessageBody="kitchen.jpg"
+        MessageBody=json.dumps({"bucket": "testing_bucket", "key": "kitchen.jpg"})
     )
     sqs_client.send_message(
         QueueUrl=queue_url,
-        MessageBody="living_room.jpg"
+        MessageBody=json.dumps({"bucket": "testing_bucket", "key": "living_room.jpg"})
     )
-    s3_client.upload_file("tests/images/kitchen.jpg", os.environ['S3_BUCKET_NAME'], "kitchen.jpg")
-    s3_client.upload_file("tests/images/living_room.jpg", os.environ['S3_BUCKET_NAME'], "living_room.jpg")
-    aws_image_process()
+    s3_client.upload_file("tests/images/kitchen.jpg", "testing_bucket", "kitchen.jpg")
+    s3_client.upload_file("tests/images/living_room.jpg", "testing_bucket", "living_room.jpg")
+    sqs, result_sqs = initialize_aws_clients()
+    aws_image_process(sqs, result_sqs)
 
     sqs = SQSManager(os.environ['SQS_RESULT_QUEUE_NAME'])
     messages = sqs.get_sqs_messages(10)
+    assert len(list(messages.values())) == 2
     for message in messages.values():
-        assert (f"Original message: kitchen.jpg. Classification result:" in message.body) | (f"Original message: living_room.jpg. Classification result:" in message.body)
+        assert message.body["status"] == "completed"
+        assert message.body["bucket"] == "testing_bucket"
+        assert message.body["key"] in ["kitchen.jpg", "living_room.jpg"]

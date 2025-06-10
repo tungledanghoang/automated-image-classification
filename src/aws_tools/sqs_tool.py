@@ -1,7 +1,10 @@
 import os
 import boto3
+import json
+from typing import List
 
-from src.schemas import SQSMessage
+from src.schemas import SQSMessage, SQSSendMessage
+from src.logging import logger
 
 
 class SQSManager:
@@ -13,6 +16,8 @@ class SQSManager:
                                 aws_secret_access_key=os.environ['AWS_ACCESS_KEY'],
                                 region_name=os.environ['AWS_REGION'])
         self.queue_url = [url for url in self.sqs.list_queues()['QueueUrls'] if queue_name in url][0]
+        if len(self.queue_url) == 0:
+            raise ValueError(f"SQS queue {queue_name} does not exist")
         self.receipt_handles = []
 
     def get_sqs_messages(self, max_number: int = 10) -> dict[str, SQSMessage]:
@@ -34,8 +39,7 @@ class SQSManager:
             ],
             MessageAttributeNames=[
                 'All'
-            ],
-            WaitTimeSeconds=0
+            ]
         )
         messages_res = response.get('Messages', [])
         messages_dict = {}
@@ -45,21 +49,20 @@ class SQSManager:
         # message polled, as they will have the receipt handle needed for deleting messages
         for message in messages_res:
             message_id = message['MessageId']
-            data = {'body': message['Body'],
+            data = {'body': json.loads(message['Body']),
                     'timestamp': int(message['Attributes']['SentTimestamp']),
                     'receipt_handle': message['ReceiptHandle']}
             if message['MessageId'] not in messages_dict.keys():
                 messages_dict[message_id] = SQSMessage(**data)
-            # delete
             elif messages_dict[message_id]['timestamp'] < data['timestamp']:
-                messages_dict[message_id] = data
+                messages_dict[message_id] = SQSMessage(**data)
         return messages_dict
 
-    def send_sqs_messages(self, messages):
+    def send_sqs_messages(self, messages: List[SQSSendMessage]):
         for message in messages:
             self.sqs.send_message(
                 QueueUrl=self.queue_url,
-                MessageBody=message
+                MessageBody=json.dumps(dict(message))
             )
 
     def delete_sqs_messages(self, messages_dict: dict[str, SQSMessage]):
@@ -70,8 +73,8 @@ class SQSManager:
             messages_dict (dict): dict with key being message id and value being
             a dict containing message body, sent timestamp and receipt handle
         """
-        for receipt_handle in messages_dict.values():
+        for message in messages_dict.values():
             self.sqs.delete_message(
                 QueueUrl=self.queue_url,
-                ReceiptHandle=receipt_handle.receipt_handle
+                ReceiptHandle=message.receipt_handle
             )
