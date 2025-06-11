@@ -20,3 +20,7 @@ def test_image_classifiers():
         assert isinstance(label, str)
     for label in labels_50:
         assert isinstance(label, str)
+
+
+def test_fail():
+    assert False
