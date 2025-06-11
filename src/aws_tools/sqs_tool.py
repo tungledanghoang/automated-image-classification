@@ -20,12 +20,13 @@ class SQSManager:
             raise ValueError(f"SQS queue {queue_name} does not exist")
         self.receipt_handles = []
 
-    def get_sqs_messages(self, max_number: int = 10) -> dict[str, SQSMessage]:
+    def get_sqs_messages(self, max_number: int = 10, long_poll_time: int = 5) -> dict[str, SQSMessage]:
         """
         Get SQS messages from queue
 
         Args:
             max_number (int): max number of messages to get from queue at once
+            long_poll_time (int): long polling time
 
         Returns:
             dict with key being message id and value being a dict containing
@@ -39,7 +40,8 @@ class SQSManager:
             ],
             MessageAttributeNames=[
                 'All'
-            ]
+            ],
+            WaitTimeSeconds=long_poll_time
         )
         messages_res = response.get('Messages', [])
         messages_dict = {}

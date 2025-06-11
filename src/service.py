@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 
 from src.models import ImageClassifierModel
 from src.aws_tools import SQSManager, S3Manager
-from src.schemas import SQSSendMessage
+from src.schemas import SQSSendMessage, SQSMessage
 from src.logging import logger
 
 load_dotenv()
@@ -29,24 +29,37 @@ def initialize_aws_clients() -> tuple[SQSManager, SQSManager]:
         logger.error(f"Failed to initialize SQS classes. Error: {e}")
 
 
-def aws_image_process(sqs: SQSManager, result_sqs:SQSManager):
+def message_polling(sqs: SQSManager, max_number: int, long_poll_time: int) -> dict[str, SQSMessage]:
+    """
+    Function for polling message from SQS and handle logging
+
+    Args:
+        sqs (SQSManager): SQS queue for polling messages
+        max_number (int): max number of messages to poll
+        long_poll_time (int): long polling time
+
+    Returns:
+        dict with str for key and SQSMessage for value
+    """
+    logger.info(f"Polling SQS queue {os.environ['SQS_QUEUE_NAME']} for image processing request")
+    try:
+        messages = sqs.get_sqs_messages(max_number, long_poll_time)
+        logger.info(f"Got {len(messages.values())} image processing requests")
+        if len(messages.values()) > 0:
+            return messages
+    except Exception as e:
+        logger.error(f"Failed to poll sqs messages. Error: {e}")
+
+
+def aws_image_process(sqs: SQSManager, result_sqs: SQSManager, messages: dict[str, SQSMessage]):
     """
     Function to handle overall image classification pipeline
 
     Args:
         sqs (SQSManager): SQS queue for polling messages
         result_sqs (SQSManager): SQS queue for sending message after successful run
+        messages (dict with SQSMessage for value): dict containing messages polled from SQS
     """
-    logger.info(f"Polling SQS queue {os.environ['SQS_QUEUE_NAME']} for image processing request")
-    try:
-        messages = sqs.get_sqs_messages(10)
-        logger.info(f"Got {len(messages.values())} image processing requests")
-        if len(messages.values()) == 0:
-            return None
-    except Exception as e:
-        logger.error(f"Failed to poll sqs messages. Error: {e}")
-        return None
-
     file_paths = []
     for mess in messages.values():
         logger.info(f"""Retrieving image {mess.body['key']} from bucket: {mess.body['bucket']}""")

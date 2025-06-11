@@ -1,7 +1,7 @@
 import os
 import json
 
-from src.service import aws_image_process, initialize_aws_clients
+from src.service import aws_image_process, initialize_aws_clients, message_polling
 from src.aws_tools import SQSManager, S3Manager
 
 
@@ -19,7 +19,8 @@ def test_main_service(moto_aws_mock):
     s3_client.upload_file("tests/images/kitchen.jpg", "testing_bucket", "kitchen.jpg")
     s3_client.upload_file("tests/images/living_room.jpg", "testing_bucket", "living_room.jpg")
     sqs, result_sqs = initialize_aws_clients()
-    aws_image_process(sqs, result_sqs)
+    messages = message_polling(sqs, 2, 5)
+    aws_image_process(sqs, result_sqs, messages)
 
     sqs = SQSManager(os.environ['SQS_RESULT_QUEUE_NAME'])
     messages = sqs.get_sqs_messages(10)
