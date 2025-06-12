@@ -1,4 +1,4 @@
-from src.models import ImageClassifierModel
+from src.image_model import ImageClassifierModel
 
 
 def test_image_classifiers():

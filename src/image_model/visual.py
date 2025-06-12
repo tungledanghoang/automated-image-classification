@@ -15,7 +15,7 @@ class ImageClassifierModel:
     """
     def __init__(self, model_name: str = "resnet18"):
         self.model_name = model_name
-        self.label_path = "src/models/labels/imagenet_labels.txt"
+        self.label_path = "src/image_model/labels/imagenet_labels.txt"
         if self.model_name == "resnet18":
             weights = ResNet18_Weights.DEFAULT
             model = resnet18

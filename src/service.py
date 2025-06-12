@@ -3,7 +3,7 @@ from datetime import datetime as dt
 import os
 from dotenv import load_dotenv
 
-from src.models import ImageClassifierModel
+from src.image_model import ImageClassifierModel
 from src.aws_tools import SQSManager, S3Manager
 from src.schemas import SQSSendMessage, SQSMessage
 from src.logging import logger
