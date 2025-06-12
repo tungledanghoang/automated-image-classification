@@ -2,7 +2,7 @@
 This is the source code for an automated image classification service. The service is designed to poll messages containing information of images on S3 buckets from an AWS SQS queue, get those images, classify them and send the results to another SQS queue
 
 ## Running the service
-An .env file needs to be created with the following fields:
+An .env file needs to be created in root directory with the following fields:
 
 ```
 AWS_ACCESS_ID: AWS access id used along with the AWS secret access key
