@@ -25,6 +25,12 @@ docker build -t automated_image_clasification .
 docker run automated_image_clasification:latest
 ```
 
+#### SQS message format
+Here is the expected format of SQS messages in the request queue
+```
+{"bucket": "BucketName", "key": "image_name.jpg"}
+```
+
 ## Running test
 Testing can be done by running the follow command at root folder
 ```bash
